@@ -1,5 +1,5 @@
 # NLP_Word2Vec
-I have coded a classic word2vec model: skip-gram model with negative sampling as the optimization method by hand in pure python3 and use TED-Talks-Dataset as the training set.  
+I have coded a classic word2vec model: skip-gram model with negative sampling as the optimization method by hand in pure python3 and use **TED-Talks-Dataset** as the training set. To test the performence of the final embedding vectors, I used the **word-test.v1.txt** word-pair dataset to test its accuracy.  
 #### GOAL:
 > **Building a skip-gram model with negative sampling to achieve that:**  
 Given a specific word in the middle of a sentence (the input word), look at the words nearby and pick one at random. The network is going to tell us the probability for every word in our vocabulary of being the “nearby word” that we chose.  

@@ -32,8 +32,7 @@ Given a specific word in the middle of a sentence (the input word), look at the 
 
 #### DATASET:
 > 01.[TED-Talks-Dataset](https://wit3.fbk.eu/)  
-02.[TOEFL Synonym Questions][1]  
-
+02.[TOEFL Synonym Questions][1]   
 **Other datasets:**  
 [WordSim353](http://www.cs.technion.ac.il/~gabr/resources/data/wordsim353/)、[SNLI](https://nlp.stanford.edu/projects/snli/)、[NER]、[SQuAD]、[Coref]、[SRL]、[SST-5]、[Parsing]
 

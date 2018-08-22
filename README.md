@@ -1,5 +1,5 @@
 # NLP_Word2Vec
-I have coded a classic word2vec model: skip-gram model with negative sampling as the optimization method by hand in pure python3 and use **TED-Talks-Dataset** as the training set. To test the performence of the final embedding vectors, I used the **word-test.v1.txt** word-pair dataset to test its accuracy.  
+I coded a classic word2vec model: skip-gram model with negative sampling as the optimization method by hand in pure python3 and used **TED-Talks-Dataset** as the train set. To test the performence of the final embedding vectors, I used the **TOEFL Synonym Questions Dataset** to test its accuracy.  
 #### GOAL:
 > **Building a skip-gram model with negative sampling to achieve that:**  
 Given a specific word in the middle of a sentence (the input word), look at the words nearby and pick one at random. The network is going to tell us the probability for every word in our vocabulary of being the “nearby word” that we chose.  
@@ -21,6 +21,7 @@ Given a specific word in the middle of a sentence (the input word), look at the 
 05.[Evaluation methods for unsupervised word embeddings](http://www.aclweb.org/anthology/D15-1036)  
 06.[Word and Phrase Translation with word2vec](https://arxiv.org/pdf/1705.03127.pdf)  
 07.[word2vec Explained: Deriving Mikolov et al.’s Negative-Sampling Word-Embedding Method](https://arxiv.org/pdf/1402.3722.pdf)  
+08.[How to Generate a Good Word Embedding?](https://arxiv.org/pdf/1507.05523.pdf)  
 
 > **Video:**  
 01.[Negative Sampling-Coursera Deeplearning](https://www.coursera.org/lecture/nlp-sequence-models/negative-sampling-Iwx0e)  
@@ -31,5 +32,9 @@ Given a specific word in the middle of a sentence (the input word), look at the 
 
 #### DATASET:
 > 01.[TED-Talks-Dataset](https://wit3.fbk.eu/)  
+02.[TOEFL Synonym Questions][1]  
+
 **Other datasets:**  
-[SNLI](https://nlp.stanford.edu/projects/snli/)、[NER]、[SQuAD]、[Coref]、[SRL]、[SST-5]、[Parsing]
+[WordSim353](http://www.cs.technion.ac.il/~gabr/resources/data/wordsim353/)、[SNLI](https://nlp.stanford.edu/projects/snli/)、[NER]、[SQuAD]、[Coref]、[SRL]、[SST-5]、[Parsing]
+
+[1]: https://aclweb.org/aclwiki/TOEFL_Synonym_Questions_(State_of_the_art)

@@ -1,11 +1,11 @@
 # -*- encoding:utf-8 -*-
 # !bin/env python
-
 import lxml.etree as e
 import re
 import string
 from collections import defaultdict
 import numpy as np
+import time
 
 doc = e.parse('./dataset/ted_en-20160408.xml')
 input_text = '\n'.join(doc.xpath('//content/text()'))
@@ -33,7 +33,7 @@ def tokenize(corpus):
 
 class Word2Vec(object):
     
-    def __init__(self, sentences, wv_size=100, window=5, min_count=5, sample=1e-4, negative=15, alpha=0.4, min_alpha=0.0001, sg=1):
+    def __init__(self, sentences, wv_size=100, window=5, min_count=5, sample=1e-4, negative=15, alpha=0.35, min_alpha=0.0001, sg=1):
         np.random.seed(1)
         self.sentences = sentences
         self.wv_size = wv_size
@@ -51,7 +51,6 @@ class Word2Vec(object):
         self.G0 = np.zeros_like(self.input_embedding)
         self.G1 = np.zeros_like(self.output_weights)
         self.fudge_factor = 1e-6
-        self.x = []
     
     def vocab(self, ):
         # sentences: list of sentence token lists
@@ -87,11 +86,9 @@ class Word2Vec(object):
         for idx, word in enumerate(sorted_vocab):
             vocab[word[0]]['word_freq'] = vocab[word[0]]['word_count'] / vocab_size
             vocab[word[0]]['word_index'] = idx
-            
         return vocab
-    
-                    
-    # forward prop
+       
+    # Forward Propagation
     def train_batch_sg(self, ):
         sentences = self.sentences
         vocab = self.vocab
@@ -104,7 +101,7 @@ class Word2Vec(object):
                     word = 'int'
                 if word not in vocab:
                     continue
-                # Subsampling of high-freq word
+                # Subsampling of High-Freq Word
                 keep_prob = min((np.sqrt(vocab[word]['word_freq'] / self.sample) + 1) * (self.sample / vocab[word]['word_freq']), 1)
                 keep_list = [1] * int(keep_prob * 1000) + [0] * (1000 - int(keep_prob * 1000))
                 if keep_list[np.random.randint(1000)]:
@@ -116,18 +113,17 @@ class Word2Vec(object):
                         train_step += 1
                         # Adaptive 
                         context_idx = self.vocab[context]['word_index']
-#                         if train_step%200 == 0:
-#                             print(self.x[-1], '\t\t', self.alpha)
-#                             self.x = []
+                        if np.min(self.G0) != 0 and self.alpha/np.min(self.G0) < self.min_alpha:
+                            print(train_step)
                         self.train_pair_sg(center_word, context, neg_word_list=neg_word_list, neg=self.negative)
 
         # Save the final embedding vector matrix
-        fname1 = './parameter_data/word_embedding_vector_matrix_test_%s.txt' % str(train_step)
-        np.savetxt(fname1, (self.input_embedding + self.output_weights) / 2)
-        fname2 = './parameter_data/word_embedding_vector_matrix_test_vvvvv_%s.txt' % str(train_step)
-        np.savetxt(fname2, self.input_embedding)
+        fname1 = './parameter_data/word_embedding_vector_matrix_test_%sf1.txt' % str(train_step)
+        np.savetxt(fname1, self.input_embedding)
+        fname2 = './parameter_data/word_embedding_vector_matrix_test_%sf2.txt' % str(train_step)
+        np.savetxt(fname2, (self.input_embedding + self.output_weights) / 2)
                 
-    # back prop
+    # Back Propagation
     def train_pair_sg(self, center_w, context_w, neg_word_list, neg=0):
         if neg > 0:
             context_idx = self.vocab[context_w]['word_index']
@@ -140,9 +136,7 @@ class Word2Vec(object):
                 if (neg_word, 0) not in neg_sample and neg_word != center_w:
                     neg_sample.append((neg_word, 0))
             # log(P(Wo|Wi)) = log(sigmoid(np.dot(Vt, Vi))) + np.sum(sigmoid(-np.dot(Vn, Vi))  for neg_w in neg_sample[1:]) / (len(neg_sample) - 1)
-#             loss = self.sigmoid(np.dot(wv_h, self.output_weights[self.vocab[neg_sample[0][0]]['word_index']])) + np.sum(self.sigmoid(-np.dot(wv_h, self.output_weights[self.vocab[neg_w[0]]['word_index']])) for neg_w in neg_sample[1:])
-#             loss = -(np.log(self.sigmoid(np.dot(wv_h, self.output_weights[self.vocab[neg_sample[0][0]]['word_index']]))) + np.sum(np.log(self.sigmoid(-np.dot(wv_h, self.output_weights[self.vocab[neg_w[0]]['word_index']]))) for neg_w in neg_sample[1:]))
-#             self.x.append(loss)
+            # Adagrad
             dh = np.zeros(self.wv_size)
             for neg_w in neg_sample:
                 target, label = neg_w[0], neg_w[1]
@@ -161,8 +155,8 @@ class Word2Vec(object):
             dh /= np.sqrt(self.G0[context_idx]) + self.fudge_factor
             assert dh.shape == wv_h.shape
             self.input_embedding[context_idx] -= self.alpha * dh
-                
-        
+    
+    # Negative Sampling
     def neg_sampling(self, vocab):
         NEG_SIZE = 1e6
         neg_word_list = []
@@ -171,13 +165,6 @@ class Word2Vec(object):
         for word in vocab:
             sorted_vocab.append((word, vocab[word]['word_freq']))
         sorted_vocab.sort(key=lambda tup: tup[1], reverse=True)
-#         p = 0 # Cumulative probability
-#         i = 0
-#         for unigram in vocab:
-#             p += float(vocab[unigram]['word_freq']**0.75) / freq_sum
-#             while i < NEG_SIZE and float(i) / NEG_SIZE < p:
-#                 neg_word_list.append(unigram)
-#                 i += 1
         for word in sorted_vocab:
             neg_word_list.extend([word[0]] * int((word[1]**0.75 / freq_sum) * NEG_SIZE))
         return neg_word_list
@@ -190,7 +177,6 @@ class Word2Vec(object):
         exp_x = EXP_TABLE[int((-x / MAX_EXP) * 500 + 500)]
         return 1 / (1 + exp_x)
                         
-        
     def cosine_distance(self, vec1, vec2):
         assert vec1.shape == vec2.shape
         return np.dot(vec1, vec2) / (np.sqrt(np.dot(vec1, vec1)) * np.sqrt(np.dot(vec2, vec2)))
@@ -205,14 +191,89 @@ class Word2Vec(object):
                 most_similar_word.append((w, cos_dis))
         most_similar_word.sort(key=lambda tup : tup[1], reverse=True)
         return most_similar_word[0:topn]
-                                 
-    def eval(self, ):
-        pass
+    
+    # Test the performance with TOEFL Synonym Questions Dataset
+    def eval_toefl(self, ):
+        ## 生成问答对
+        vocab = self.vocab
+        imb_matrix = self.input_embedding
+        fname = './parameter_data/word_embedding_vector_matrix_test_f3.txt'
+        np.savetxt(fname, imb_matrix)
+        qst = {}
+        qst_ans = {}
+        key = []
+        val = []
+        sub_val = []
+        ans = []
+        i = 1
+        with open('./dataset/toefl-synonymset/toefl.qst', 'r') as f:
+            for line in f:
+                if i%6 == 1:
+                    key.append(line.split()[1])
+                if i%6 == 2:
+                    sub_val.append((line.split()[1], line.split()[0]))
+                if i%6 == 3:
+                    sub_val.append((line.split()[1], line.split()[0]))
+                if i%6 == 4:
+                    sub_val.append((line.split()[1], line.split()[0]))
+                if i%6 == 5:
+                    sub_val.append((line.split()[1], line.split()[0]))
+                if i%6 == 0:
+                    val.append(sub_val)
+                    sub_val = []
+                i += 1
+        with open('./dataset/toefl-synonymset/toefl.ans', 'r') as f:
+            for line in f:
+                if line != '\n':
+                    ans.append(line.split()[-1])
+        for k, v in zip(key, val):
+            qst[k] = dict(v)
+        for k, a in zip(key, ans):
+            qst_ans[k] = a + '.'
+        acc = 0
+        total = 0
+        for q in qst:
+            if q in vocab:
+                sim = []
+                total += 1
+                for c in qst[q]:
+                    if c in vocab:
+                        vec_q = imb_matrix[vocab[q]['word_index']]
+                        vec_c = imb_matrix[vocab[c]['word_index']]
+                        cos_dis = self.cosine_distance(vec_q, vec_c)
+                        sim.append((qst[q][c], cos_dis))
+                    else:
+                        sim.append((qst[q][c], 0.0))
+                if sim:
+                    sim.sort(key=lambda tup: tup[1], reverse=True)
+                    if sim[0][0] == qst_ans[q]:
+                        acc += 1
+        return acc, total, acc/total
     
 if __name__ == '__main__':
     sentences = tokenize(input_text)
     word2vec = Word2Vec(sentences)
+    vocabulary = word2vec.vocab
+    b1 = time.time()
     word2vec.train_batch_sg()
-    most_similar_word = word2vec.most_similar('man', topn=10)
+    train_time = time.time() - b1
+    most_similar_word_science = word2vec.most_similar('science', topn=10)
+    most_similar_word_man = word2vec.most_similar('man', topn=10)
+    most_similar_word_kill = word2vec.most_similar('kill', topn=10)
+    most_similar_word_red = word2vec.most_similar('red', topn=10)
+    most_similar_word_monday = word2vec.most_similar('monday', topn=10)
+    accuracy = word2vec.eval_teofl()
     with open('most_similar_word.txt', 'w') as f:
-        f.write(str(most_similar_word))
+        f.write(str(train_time))
+        f.write('\n')
+        f.write(str(most_similar_word_science))
+        f.write('\n')
+        f.write(str(most_similar_word_man))
+        f.write('\n')
+        f.write(str(most_similar_word_kill))
+        f.write('\n')
+        f.write(str(most_similar_word_red))
+        f.write('\n')
+        f.write(str(most_similar_word_monday))
+        f.write('\n')
+        f.write(str(accuracy))

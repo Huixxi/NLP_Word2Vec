@@ -33,7 +33,7 @@ def tokenize(corpus):
 
 class Word2Vec(object):
     
-    def __init__(self, sentences, wv_size=100, window=5, min_count=5, sample=1e-4, negative=15, alpha=0.35, min_alpha=0.0001, sg=1):
+    def __init__(self, sentences, wv_size=100, window=5, min_count=5, sample=1e-4, negative=15, alpha=0.36, min_alpha=0.0001, sg=1):
         np.random.seed(1)
         self.sentences = sentences
         self.wv_size = wv_size

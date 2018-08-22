@@ -1,4 +1,4 @@
-# NLP_Word2Vec
+# NLP_Word2Vec:Skip-Gram Model
 I coded a classic word2vec model: skip-gram model with negative sampling as the optimization method by hand in pure python3 and used **TED-Talks-Dataset** as the train set. To test the performence of the final embedding vectors, I used the **TOEFL Synonym Questions Dataset** to test its accuracy.  
 #### GOAL:
 > **Building a skip-gram model with negative sampling to achieve that:**  
